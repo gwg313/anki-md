@@ -6,33 +6,30 @@
     pre-commit-hooks.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs =
-    { self
-    , nixpkgs
-    , pre-commit-hooks
-    , ...
-    }:
-    let
-      withSystem = f:
-        nixpkgs.lib.fold nixpkgs.lib.recursiveUpdate { } (
-          map f [
-            "x86_64-linux"
-            "x86_64-darwin"
-            "aarch64-linux"
-            "aarch64-darwin"
-          ]
-        );
-    in
+  outputs = {
+    self,
+    nixpkgs,
+    pre-commit-hooks,
+    ...
+  }: let
+    withSystem = f:
+      nixpkgs.lib.fold nixpkgs.lib.recursiveUpdate {} (
+        map f [
+          "x86_64-linux"
+          "x86_64-darwin"
+          "aarch64-linux"
+          "aarch64-darwin"
+        ]
+      );
+  in
     withSystem (
-      system:
-      let
+      system: let
         pkgs = nixpkgs.legacyPackages.${system};
-      in
-      {
+      in {
         packages.${system} = {
           default = pkgs.writeShellApplication {
             name = "mdtoanki";
-            runtimeInputs = with pkgs; [ markdown-anki-decks ];
+            runtimeInputs = with pkgs; [markdown-anki-decks];
             text = ''
               mdankideck decks output
             '';
@@ -43,6 +40,8 @@
             inherit (self.checks.${system}.pre-commit-check) shellHook;
             buildInputs = with pkgs; [
               markdown-anki-decks
+              alejandra
+              mdl
             ];
           };
         };
@@ -50,7 +49,7 @@
           pre-commit-check = pre-commit-hooks.lib.${system}.run {
             src = ./.;
             hooks = {
-              nixpkgs-fmt.enable = true;
+              alejandra.enable = true;
               markdownlint.enable = true;
             };
           };
