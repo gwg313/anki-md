@@ -1,16 +1,29 @@
 on: [push, pull_request]
-name: Basic Checks
+name: Check Format and build decks
 jobs:
-  formatting-check:
+  format-build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4.1.1
       - uses: cachix/install-nix-action@v23
+
         with:
           nix_path: nixpkgs=channel:nixos-unstable
 
       - name: Check nix file formatting
         run: nix develop --command alejandra --check .
 
-      - name: Check that nvim builds
+      - name: Check markdown file formatting
         run: nix develop --command mdl .
+
+      - name: Create output directory
+        run: mkdir output
+
+      - name: Build Decks
+        run: nix run
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: Anki Decks
+          path: output/
+
